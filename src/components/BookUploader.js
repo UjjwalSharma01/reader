@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, FileText, Book, File } from 'lucide-react';
+import { processFile, isFileSupported } from '@/utils/fileUtils';
 
 export default function BookUploader({ onUpload, onClose, isDarkMode }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -55,57 +56,6 @@ export default function BookUploader({ onUpload, onClose, isDarkMode }) {
     }
     
     setIsUploading(false);
-  };
-
-  const isFileSupported = (file) => {
-    return Object.keys(supportedFormats).includes(file.type) || 
-           file.name.toLowerCase().endsWith('.epub') ||
-           file.name.toLowerCase().endsWith('.txt') ||
-           file.name.toLowerCase().endsWith('.pdf');
-  };
-
-  const processFile = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const fileData = e.target.result;
-        
-        // Create book object
-        const book = {
-          id: Date.now() + Math.random(),
-          title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
-          author: 'Unknown Author',
-          format: getFileFormat(file),
-          size: file.size,
-          addedDate: new Date().toISOString(),
-          data: fileData,
-          fileName: file.name,
-          lastRead: null,
-          progress: 0,
-          bookmarks: [],
-          highlights: [],
-          notes: []
-        };
-        
-        resolve(book);
-      };
-      
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const getFileFormat = (file) => {
-    if (file.type === 'application/epub+zip' || file.name.toLowerCase().endsWith('.epub')) {
-      return 'EPUB';
-    } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      return 'PDF';
-    } else if (file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt')) {
-      return 'TXT';
-    } else {
-      return 'Unknown';
-    }
   };
 
   return (
