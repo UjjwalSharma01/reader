@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPdfUrl, cleanupPdfUrl } from '@/utils/pdfUtils';
 import { loadTextContent, splitTextIntoPages } from '@/utils/textUtils';
+import { bookDB } from '@/utils/indexedDB';
 
 export function useBookLoader(book) {
   const [isLoading, setIsLoading] = useState(true);
@@ -32,12 +33,23 @@ export function useBookLoader(book) {
     setError(null);
     
     try {
-      if (book.format === 'EPUB') {
-        await loadEpubBook();
-      } else if (book.format === 'PDF') {
-        await loadPdfBook();
-      } else if (book.format === 'TXT') {
-        await loadTextBook();
+      // If book doesn't have data property, try to load it from IndexedDB
+      let bookData = book;
+      if (!book.data) {
+        const fullBookData = await bookDB.getBook(book.id);
+        if (fullBookData) {
+          bookData = fullBookData;
+        } else {
+          throw new Error('Book data not found');
+        }
+      }
+
+      if (bookData.format === 'EPUB') {
+        await loadEpubBook(bookData);
+      } else if (bookData.format === 'PDF') {
+        await loadPdfBook(bookData);
+      } else if (bookData.format === 'TXT') {
+        await loadTextBook(bookData);
       } else {
         throw new Error('Unsupported book format');
       }
@@ -48,18 +60,18 @@ export function useBookLoader(book) {
     }
   };
 
-  const loadEpubBook = async () => {
+  const loadEpubBook = async (bookData) => {
     try {
       // For now, we'll show a placeholder until we implement full EPUB support
       setBookContent(`
         <div class="epub-content">
-          <h1>${book.title}</h1>
-          <p><strong>Author:</strong> ${book.author}</p>
-          <p><strong>Format:</strong> ${book.format}</p>
+          <h1>${bookData.title}</h1>
+          <p><strong>Author:</strong> ${bookData.author}</p>
+          <p><strong>Format:</strong> ${bookData.format}</p>
           <div class="book-placeholder">
             <p>EPUB reader functionality is being implemented.</p>
             <p>This is a placeholder for the book content.</p>
-            <p>The book file "${book.fileName}" has been successfully loaded.</p>
+            <p>The book file "${bookData.fileName}" has been successfully loaded.</p>
             <p>Full EPUB rendering will be available in the next update.</p>
           </div>
         </div>
@@ -70,15 +82,15 @@ export function useBookLoader(book) {
     }
   };
 
-  const loadPdfBook = async () => {
+  const loadPdfBook = async (bookData) => {
     try {
       // Clean up any existing PDF URL
       if (pdfUrl) {
         cleanupPdfUrl(pdfUrl);
       }
       
-      // Create PDF URL from base64 data
-      const url = createPdfUrl(book.data);
+      // Create PDF URL from ArrayBuffer data
+      const url = createPdfUrl(bookData.data);
       setPdfUrl(url);
       setBookContent('');
       setTotalPages(1); // Will be updated by the PDF viewer
@@ -89,10 +101,10 @@ export function useBookLoader(book) {
     }
   };
 
-  const loadTextBook = async () => {
+  const loadTextBook = async (bookData) => {
     try {
-      // Load text content from base64 data
-      const textContent = loadTextContent(book.data);
+      // Load text content from ArrayBuffer data
+      const textContent = loadTextContent(bookData.data);
       
       // Split text into pages
       const pages = splitTextIntoPages(textContent, 500);

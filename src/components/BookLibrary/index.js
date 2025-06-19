@@ -7,6 +7,7 @@ import BookListItem from './BookListItem';
 import BookLibraryEmpty from './BookLibraryEmpty';
 import BookLibraryNoResults from './BookLibraryNoResults';
 import BookLibraryStats from './BookLibraryStats';
+import { bookDB } from '@/utils/indexedDB';
 
 export default function BookLibrary({ books, onBookSelect, onBookDelete, isDarkMode }) {
   const {
@@ -22,6 +23,36 @@ export default function BookLibrary({ books, onBookSelect, onBookDelete, isDarkM
     getBookIcon,
     formatDate
   } = useBookLibrary(books);
+
+  const handleBookSelect = async (book) => {
+    try {
+      // Get the full book data from IndexedDB
+      const fullBookData = await bookDB.getBook(book.id);
+      if (fullBookData) {
+        onBookSelect(fullBookData);
+      } else {
+        // Fallback to the metadata if not found in IndexedDB
+        onBookSelect(book);
+      }
+    } catch (error) {
+      console.error('Error loading book:', error);
+      // Fallback to the metadata
+      onBookSelect(book);
+    }
+  };
+
+  const handleBookDelete = async (bookId) => {
+    try {
+      // Delete from IndexedDB
+      await bookDB.deleteBook(bookId);
+      // Delete from localStorage via parent component
+      onBookDelete(bookId);
+    } catch (error) {
+      console.error('Error deleting book:', error);
+      // Still delete from localStorage even if IndexedDB deletion fails
+      onBookDelete(bookId);
+    }
+  };
 
   if (books.length === 0) {
     return <BookLibraryEmpty />;
@@ -51,8 +82,8 @@ export default function BookLibrary({ books, onBookSelect, onBookDelete, isDarkM
               <BookCard 
                 key={book.id} 
                 book={book}
-                onBookSelect={onBookSelect}
-                onBookDelete={onBookDelete}
+                onBookSelect={handleBookSelect}
+                onBookDelete={handleBookDelete}
                 selectedBook={selectedBook}
                 setSelectedBook={setSelectedBook}
                 getBookIcon={getBookIcon}
@@ -62,8 +93,8 @@ export default function BookLibrary({ books, onBookSelect, onBookDelete, isDarkM
               <BookListItem 
                 key={book.id} 
                 book={book}
-                onBookSelect={onBookSelect}
-                onBookDelete={onBookDelete}
+                onBookSelect={handleBookSelect}
+                onBookDelete={handleBookDelete}
                 selectedBook={selectedBook}
                 setSelectedBook={setSelectedBook}
                 getBookIcon={getBookIcon}

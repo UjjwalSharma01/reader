@@ -1,13 +1,20 @@
 // Text reader utilities
 import { base64ToArrayBuffer } from './fileUtils';
 
-export const loadTextContent = (base64Data) => {
+export const loadTextContent = (data) => {
   try {
-    // Convert base64 back to ArrayBuffer
-    const arrayBuffer = base64ToArrayBuffer(base64Data);
-    // Decode as text
-    const decoder = new TextDecoder();
-    return decoder.decode(arrayBuffer);
+    // Handle both ArrayBuffer and base64 data
+    if (data instanceof ArrayBuffer) {
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(data);
+    } else if (typeof data === 'string') {
+      // Convert base64 back to ArrayBuffer first
+      const arrayBuffer = base64ToArrayBuffer(data);
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(arrayBuffer);
+    } else {
+      throw new Error('Unsupported data format');
+    }
   } catch (error) {
     console.error('Error loading text content:', error);
     throw new Error('Failed to load text content');

@@ -1,10 +1,19 @@
 // PDF reader utilities
 import { base64ToArrayBuffer } from './fileUtils';
 
-export const createPdfUrl = (base64Data) => {
+export const createPdfUrl = (data) => {
   try {
-    // Convert base64 back to ArrayBuffer
-    const arrayBuffer = base64ToArrayBuffer(base64Data);
+    // Handle both ArrayBuffer and base64 data
+    let arrayBuffer;
+    if (data instanceof ArrayBuffer) {
+      arrayBuffer = data;
+    } else if (typeof data === 'string') {
+      // Convert base64 back to ArrayBuffer
+      arrayBuffer = base64ToArrayBuffer(data);
+    } else {
+      throw new Error('Unsupported data format');
+    }
+    
     // Create blob from ArrayBuffer
     const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
     // Create object URL

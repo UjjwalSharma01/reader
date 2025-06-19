@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Upload, X, FileText, Book, File } from 'lucide-react';
 import { processFile, isFileSupported } from '@/utils/fileUtils';
+import { bookDB } from '@/utils/indexedDB';
 
 export default function BookUploader({ onUpload, onClose, isDarkMode }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -45,7 +46,27 @@ export default function BookUploader({ onUpload, onClose, isDarkMode }) {
       if (isFileSupported(file)) {
         try {
           const book = await processFile(file);
-          onUpload(book);
+          
+          // Store the full book data (including file content) in IndexedDB
+          await bookDB.storeBook(book);
+          
+          // Create a lightweight version for localStorage (without file data)
+          const bookMetadata = {
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            format: book.format,
+            size: book.size,
+            addedDate: book.addedDate,
+            fileName: book.fileName,
+            lastRead: book.lastRead,
+            progress: book.progress,
+            bookmarks: book.bookmarks,
+            highlights: book.highlights,
+            notes: book.notes
+          };
+          
+          onUpload(bookMetadata);
         } catch (error) {
           console.error('Error processing file:', error);
           alert(`Error processing file ${file.name}: ${error.message}`);
