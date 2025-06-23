@@ -6,16 +6,45 @@ import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 const Viewer = dynamic(
-  () => import('@react-pdf-viewer/core').then(mod => mod.Viewer),
+  () => import('@react-pdf-viewer/core').then(mod => ({ default: mod.Viewer })),
   { ssr: false }
 );
-const defaultLayoutPlugin = dynamic(
-  () => import('@react-pdf-viewer/default-layout').then(mod => mod.defaultLayoutPlugin),
+const DefaultLayoutPlugin = dynamic(
+  () => import('@react-pdf-viewer/default-layout').then(mod => ({ default: mod.defaultLayoutPlugin })),
   { ssr: false }
 );
 
-export default function BookReaderContent({ book, pdfUrl, textPages, currentPage, bookContent, readerSettings, contentRef }) {
+const EpubReader = dynamic(
+  () => import('./EpubReader'),
+  { ssr: false }
+);
+
+export default function BookReaderContent({ 
+  book, 
+  pdfUrl, 
+  textPages, 
+  currentPage, 
+  bookContent, 
+  epubData,
+  readerSettings, 
+  contentRef,
+  onAddBookmark,
+  onPageChange 
+}) {
   const renderContent = () => {
+    // EPUB Content
+    if (book.format === 'EPUB' && epubData) {
+      return (
+        <EpubReader
+          epubData={epubData}
+          readerSettings={readerSettings}
+          onAddBookmark={onAddBookmark}
+          onPageChange={onPageChange}
+        />
+      );
+    }
+    
+    // PDF Content
     if (book.format === 'PDF' && pdfUrl) {
       const DefaultLayoutPlugin = defaultLayoutPlugin;
       const defaultLayoutPluginInstance = DefaultLayoutPlugin ? DefaultLayoutPlugin() : undefined;

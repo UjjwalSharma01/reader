@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPdfUrl, cleanupPdfUrl } from '@/utils/pdfUtils';
 import { loadTextContent, splitTextIntoPages } from '@/utils/textUtils';
+import { loadEpubContent } from '@/utils/epubUtils';
 import { bookDB } from '@/utils/indexedDB';
 
 export function useBookLoader(book) {
@@ -12,6 +13,7 @@ export function useBookLoader(book) {
   const [totalPages, setTotalPages] = useState(0);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [textPages, setTextPages] = useState([]);
+  const [epubData, setEpubData] = useState(null);
 
   // Cleanup PDF URL on component unmount
   useEffect(() => {
@@ -62,23 +64,23 @@ export function useBookLoader(book) {
 
   const loadEpubBook = async (bookData) => {
     try {
-      // For now, we'll show a placeholder until we implement full EPUB support
-      setBookContent(`
-        <div class="epub-content">
-          <h1>${bookData.title}</h1>
-          <p><strong>Author:</strong> ${bookData.author}</p>
-          <p><strong>Format:</strong> ${bookData.format}</p>
-          <div class="book-placeholder">
-            <p>EPUB reader functionality is being implemented.</p>
-            <p>This is a placeholder for the book content.</p>
-            <p>The book file "${bookData.fileName}" has been successfully loaded.</p>
-            <p>Full EPUB rendering will be available in the next update.</p>
-          </div>
-        </div>
-      `);
-      setTotalPages(1);
+      console.log('Loading EPUB book:', bookData.title);
+      console.log('Book data type:', typeof bookData.data);
+      console.log('Book data instanceof ArrayBuffer:', bookData.data instanceof ArrayBuffer);
+      
+      if (!bookData.data) {
+        throw new Error('No book data found');
+      }
+      
+      const epubContent = await loadEpubContent(bookData.data);
+      console.log('EPUB content loaded successfully:', epubContent);
+      
+      setEpubData(epubContent);
+      setBookContent(''); // Clear HTML content for EPUB
+      setTotalPages(epubContent.totalPages);
     } catch (error) {
-      throw new Error('Failed to load EPUB file');
+      console.error('EPUB loading error:', error);
+      throw new Error('Failed to load EPUB file: ' + error.message);
     }
   };
 
@@ -124,6 +126,7 @@ export function useBookLoader(book) {
     bookContent,
     totalPages,
     pdfUrl,
-    textPages
+    textPages,
+    epubData
   };
 }

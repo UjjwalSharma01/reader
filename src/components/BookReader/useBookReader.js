@@ -17,7 +17,8 @@ export function useBookReader(book) {
     bookContent,
     totalPages,
     pdfUrl,
-    textPages
+    textPages,
+    epubData
   } = useBookLoader(book);
 
   const {
@@ -49,6 +50,7 @@ export function useBookReader(book) {
     error,
     pdfUrl,
     textPages,
+    epubData,
     contentRef,
     
     // Actions

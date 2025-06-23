@@ -20,6 +20,7 @@ export default function BookReader({ book, onClose, isDarkMode }) {
     error,
     pdfUrl,
     textPages,
+    epubData,
     contentRef,
     setShowSettings,
     saveReaderSettings,
@@ -39,7 +40,7 @@ export default function BookReader({ book, onClose, isDarkMode }) {
 
   return (
     <div 
-      className="fixed inset-0 flex flex-col"
+      className="fixed inset-0 flex flex-col bg-white dark:bg-gray-900"
       style={{ backgroundColor: readerSettings.backgroundColor }}
     >
       <BookReaderHeader
@@ -50,15 +51,20 @@ export default function BookReader({ book, onClose, isDarkMode }) {
         onToggleSettings={() => setShowSettings(!showSettings)}
       />
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         <BookReaderContent
           book={book}
           pdfUrl={pdfUrl}
           textPages={textPages}
           currentPage={currentPage}
           bookContent={bookContent}
+          epubData={epubData}
           readerSettings={readerSettings}
           contentRef={contentRef}
+          onAddBookmark={addBookmark}
+          onPageChange={(location) => {
+            // Handle EPUB page changes if needed
+          }}
         />
 
         {showSettings && (
